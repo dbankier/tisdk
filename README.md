@@ -4,6 +4,12 @@ Install GA, RC, Beta, Alpha titanium sdk builds. Works also for v4+.
 
 This is based on the git tags in the repository and the Appcelerator CI builds.
 
+## Install
+
+~~~
+$ npm install -g tisdk
+~~~
+
 ## Commmands
 
 `tisdk list` - list available GA and RC builds
