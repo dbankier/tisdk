@@ -1,6 +1,6 @@
 {
   "name": "tisdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Install titanium sdk GA releases 4+",
   "main": "index.js",
   "repository": "https://github.com/dbankier/tisdk",
@@ -14,6 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.4.7",
+    "chalk": "^1.1.0",
     "commander": "^2.8.1",
     "progress": "^1.1.8",
     "request": "^2.58.0",

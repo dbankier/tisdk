@@ -4,6 +4,7 @@ var _ = require("underscore");
 var program = require("commander");
 var tisdk = require("../index");
 var ProgressBar = require("progress");
+var chalk = require("chalk");
 var fs = require("fs");
 var path = require("path");
 var AdmZip = require("adm-zip");
@@ -20,7 +21,13 @@ program
 .action(function() {
   tisdk.getGATags(function(tags) {
     tags.map(function(tag) {
-      console.log(tag.name.replace(/_/g, "."));
+      var version = tag.name.replace(/_/g, ".");
+      var type = version.split(".")[3];
+      if (type==="GA") {
+        console.log(chalk.bold.green(version));
+      } else {
+        console.log(version);
+      }
     });
   });
 });
