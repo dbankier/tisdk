@@ -9,8 +9,15 @@ var fs = require("fs");
 var path = require("path");
 var AdmZip = require("adm-zip");
 var request = require("request");
-var TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
+var os =  require('os');
 
+var TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
+var platform = "osx";
+
+if (os.platform()=="linux"){
+        TITANIUM = path.join(process.env.HOME, '.titanium');
+        platform = "linux";
+}
 
 program
 .version(require("../package.json").version);
@@ -46,15 +53,22 @@ program
       return;
     }
     var nightly = tag.name.split("_").splice(0,2).join("_") + "_" + "X";
+
     tisdk.getNightlies(nightly, function(list) {
       var build = _.find(list, function(t) { return t.git_revision === tag.commit.sha;});
       if (!build) {
         console.error("Build not available.");
         return;
       }
-      var tmp_file = "mobilesdk-" + _version + "-osx.zip";
+      var tmp_file = "mobilesdk-" + _version + "-"+platform+".zip";
       var file = fs.createWriteStream(tmp_file);
-      var req = request.get("http://builds.appcelerator.com/mobile/" + nightly + "/" + build.filename);
+      var filename = build.filename;
+      if (platform=="linux"){
+          filename = filename.replace(/osx/g,"linux");
+      }
+
+      var req = request.get("http://builds.appcelerator.com/mobile/" + nightly + "/" + filename);
+
       req.pipe(file);
       req.on('response', function(req) {
         var bar = new ProgressBar('Downloading... [:bar] :percent :etas', {
@@ -73,12 +87,12 @@ program
         var zip = new AdmZip(tmp_file);
         zip.extractAllTo(TITANIUM);
         fs.renameSync(
-          path.join(TITANIUM, "mobilesdk", "osx", build.filename.split("-")[1]),
-          path.join(TITANIUM, "mobilesdk", "osx", _version)
+          path.join(TITANIUM, "mobilesdk", platform, build.filename.split("-")[1]),
+          path.join(TITANIUM, "mobilesdk", platform, _version)
         );
         fs.unlinkSync(tmp_file);
         console.log("Installed Successfully!");
-      });
+    });
     });
   });
 
