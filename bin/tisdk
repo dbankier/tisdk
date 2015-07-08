@@ -15,8 +15,8 @@ var TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Ti
 var platform = "osx";
 
 if (os.platform()=="linux"){
-        TITANIUM = path.join(process.env.HOME, '.titanium');
-        platform = "linux";
+  TITANIUM = path.join(process.env.HOME, '.titanium');
+  platform = "linux";
 }
 
 program
@@ -64,7 +64,7 @@ program
       var file = fs.createWriteStream(tmp_file);
       var filename = build.filename;
       if (platform=="linux"){
-          filename = filename.replace(/osx/g,"linux");
+        filename = filename.replace(/osx/g,"linux");
       }
 
       var req = request.get("http://builds.appcelerator.com/mobile/" + nightly + "/" + filename);
@@ -92,7 +92,7 @@ program
         );
         fs.unlinkSync(tmp_file);
         console.log("Installed Successfully!");
-    });
+      });
     });
   });
 
