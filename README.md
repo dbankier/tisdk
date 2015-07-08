@@ -16,9 +16,10 @@ $ npm install -g tisdk
 
 `tisdk install [version]` - installs the GA sdk , e.g. 4.0.0.GA.
 
-### Note
+### Platforms Support
 
-Currently only for OSX and installs the sdk to `~/Library/Application Support/Titanium`.
+ * **OSX** - installs the sdk to `~/Library/Application Support/Titanium`.
+ * **Linux** - installs the sdk to `~/.titanium` (thanks @m1ga)
 
 
 **Licence: MIT**
