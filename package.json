@@ -1,6 +1,6 @@
 {
   "name": "tisdk",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Install titanium sdk GA releases 4+",
   "main": "index.js",
   "repository": "https://github.com/dbankier/tisdk",
