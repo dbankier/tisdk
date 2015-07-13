@@ -2,7 +2,7 @@ var request = require("request");
 
 exports.getGATags = function getGATags(callback) {
   request({
-    url: "https://api.github.com/repos/appcelerator/titanium_mobile/tags",
+    url: "https://api.github.com/repos/appcelerator/titanium_mobile/tags?per_page=50",
     headers: {
       'User-Agent': 'Awesome-Octocat-App'
     }

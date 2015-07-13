@@ -24,15 +24,16 @@ program
 
 program
 .command("list")
+.option("-g, --ga-only", "List GA releases only")
 .description("List available GA releases")
-.action(function() {
+.action(function(o) {
   tisdk.getGATags(function(tags) {
     tags.map(function(tag) {
       var version = tag.name.replace(/_/g, ".");
       var type = version.split(".")[3];
       if (type==="GA") {
         console.log(chalk.bold.green(version));
-      } else {
+      } else if (!o.gaOnly) {
         console.log(version);
       }
     });
@@ -100,3 +101,6 @@ program
 
 
 program.parse(process.argv);
+if (program.args.length === 0 || typeof program.args[program.args.length -1] === 'string'){
+    program.help();
+  }
