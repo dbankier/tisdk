@@ -3,12 +3,11 @@
 var _ = require("underscore");
 var program = require("commander");
 var tisdk = require("../index");
-var ProgressBar = require("progress");
 var chalk = require("chalk");
 var fs = require("fs");
 var path = require("path");
 var AdmZip = require("adm-zip");
-var request = require("request");
+var appc = require("node-appc");
 var os =  require('os');
 
 var TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
@@ -43,64 +42,42 @@ program
 program
 .description("Install a GA version")
 .command("install [version]")
-.action(function(_version) {
-  var version = _version.replace(/\./g, "_");
-  tisdk.getGATags(function(tags) {
-    var tag = _.find(tags, function(tag) {
-      return tag.name === version;
-    });
-    if (!tag) {
-      console.error("Invalid GA Version: use the `tisdk list` command");
-      return;
-    }
-    var nightly = tag.name.split("_").splice(0,2).join("_") + "_" + "X";
+.action(function(version) {
 
-    tisdk.getNightlies(nightly, function(list) {
-      var build = _.find(list, function(t) { return t.git_revision === tag.commit.sha;});
-      if (!build) {
-        console.error("Build not available.");
-        return;
+  var tmp_file = "mobilesdk-" + version + "-"+platform+".zip";
+  tisdk.download(version, tmp_file, function(build){
+    console.log("Unzipping...");
+    appc.zip.unzip(tmp_file, TITANIUM, {
+      visitor: function(entry, i, len) {
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        process.stdout.write("Unzipping (" + i + "/" + len + ") : " + chalk.grey(entry.entryName) );
       }
-      var tmp_file = "mobilesdk-" + _version + "-"+platform+".zip";
-      var file = fs.createWriteStream(tmp_file);
-      var filename = build.filename;
-      if (platform=="linux"){
-        filename = filename.replace(/osx/g,"linux");
-      }
-
-      var req = request.get("http://builds.appcelerator.com/mobile/" + nightly + "/" + filename);
-
-      req.pipe(file);
-      req.on('response', function(req) {
-        var bar = new ProgressBar('Downloading... [:bar] :percent :etas', {
-          complete: '=',
-          incomplete: ' ',
-          width: 40,
-          total: parseInt(req.headers['content-length'])
-        });
-        req.on('data', function(buffer) {
-          bar.tick(buffer.length);
-        });
-      });
-      file.on('finish', function() {
-        file.close();
-        console.log("Unzipping...");
-        var zip = new AdmZip(tmp_file);
-        zip.extractAllTo(TITANIUM);
-        fs.renameSync(
-          path.join(TITANIUM, "mobilesdk", platform, build.filename.split("-")[1]),
-          path.join(TITANIUM, "mobilesdk", platform, _version)
-        );
-        fs.unlinkSync(tmp_file);
-        console.log("Installed Successfully!");
-      });
+    }, function() {
+      var source = path.join(TITANIUM, "mobilesdk", platform, build.filename.split("-")[1]);
+      var target = path.join(TITANIUM, "mobilesdk", platform, version);
+      console.log("");
+      console.log("Renaming " + source + " to " + target);
+      fs.renameSync(source, target);
+      fs.unlinkSync(tmp_file);
+      console.log("Installed Successfully!");
     });
   });
 
 });
 
 
+program
+.description("Download a GA version")
+.command("download [version]")
+.action(function(version) {
+  var tmp_file = "mobilesdk-" + version + "-"+platform+".zip";
+  tisdk.download(version, tmp_file, function(build){
+    console.log("Done.");
+  });
+});
+
 program.parse(process.argv);
 if (program.args.length === 0 || typeof program.args[program.args.length -1] === 'string'){
-    program.help();
-  }
+  program.help();
+}

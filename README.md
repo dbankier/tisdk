@@ -12,9 +12,11 @@ $ npm install -g tisdk
 
 ## Commmands
 
-`tisdk list` - list available GA and RC builds
+`tisdk list` - list available GA and RC builds, use the `--ga-only` flag to hide RCs and Betas
 
 `tisdk install [version]` - installs the GA sdk , e.g. 4.0.0.GA.
+
+`tisdk download [version]` - installs the GA sdk , e.g. 4.0.0.GA.
 
 ### Platforms Support
 

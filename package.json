@@ -13,9 +13,9 @@
   "author": "David Bankier",
   "license": "MIT",
   "dependencies": {
-    "adm-zip": "^0.4.7",
     "chalk": "^1.1.0",
     "commander": "^2.8.1",
+    "node-appc": "^0.2.26",
     "progress": "^1.1.8",
     "request": "^2.58.0",
     "underscore": "^1.8.3"
