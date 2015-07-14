@@ -6,7 +6,6 @@ var tisdk = require("../index");
 var chalk = require("chalk");
 var fs = require("fs");
 var path = require("path");
-var AdmZip = require("adm-zip");
 var appc = require("node-appc");
 var os =  require('os');
 
