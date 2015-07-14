@@ -6,6 +6,7 @@ var tisdk = require("../index");
 var chalk = require("chalk");
 var fs = require("fs");
 var path = require("path");
+var rimraf = require("rimraf");
 var appc = require("node-appc");
 var os =  require('os');
 
@@ -41,9 +42,16 @@ program
 program
 .description("Install a GA version")
 .command("install [version]")
-.action(function(version) {
+.option("-f, --force", "Overwrite existing install")
+.action(function(version, options) {
 
   var tmp_file = "mobilesdk-" + version + "-"+platform+".zip";
+  var target = path.join(TITANIUM, "mobilesdk", platform, version);
+  var overwrite = !!options.force;
+  if (fs.existsSync(target) && !overwrite) {
+    console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
+    return;
+  };
   tisdk.download(version, tmp_file, function(build){
     console.log("Unzipping...");
     appc.zip.unzip(tmp_file, TITANIUM, {
@@ -54,8 +62,11 @@ program
       }
     }, function() {
       var source = path.join(TITANIUM, "mobilesdk", platform, build.filename.split("-")[1]);
-      var target = path.join(TITANIUM, "mobilesdk", platform, version);
       console.log("");
+      if (overwrite) {
+        console.log("Removing old " + target);
+        rimraf.sync(target);
+      }
       console.log("Renaming " + source + " to " + target);
       fs.renameSync(source, target);
       fs.unlinkSync(tmp_file);
