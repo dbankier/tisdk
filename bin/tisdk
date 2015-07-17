@@ -10,12 +10,18 @@ var rimraf = require("rimraf");
 var appc = require("node-appc");
 var os =  require('os');
 
-var TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
-var platform = "osx";
+var TITANIUM, platform;
+
 
 if (os.platform()=="linux"){
   TITANIUM = path.join(process.env.HOME, '.titanium');
   platform = "linux";
+} else if (os.platform() === "win32") {
+  TITANIUM = path.join(process.cwd().split(path.sep)[0], "ProgramData", "Titanium");
+  platform = "win32";
+} else {
+  TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
+  platform = "osx";
 }
 
 program

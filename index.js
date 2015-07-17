@@ -8,7 +8,10 @@ var os =  require('os');
 
 if (os.platform()=="linux"){
   platform = "linux";
+} else if (os.platform() === "win32") {
+  platform = "win32";
 }
+
 
 exports.getGATags = function getGATags(callback) {
   request({
@@ -55,6 +58,8 @@ exports.download = function(_version, destination, callback) {
       var filename = build.filename;
       if (platform=="linux"){
         filename = filename.replace(/osx/g,"linux");
+      } else if (platform === "win32") {
+        filename = filename.replace(/osx/g,"win32");
       }
 
       var req = request.get("http://builds.appcelerator.com/mobile/" + nightly + "/" + filename);
