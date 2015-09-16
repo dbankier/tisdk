@@ -37,9 +37,9 @@ program
       var version = tag.name.replace(/_/g, ".");
       var type = version.split(".")[3];
       if (type==="GA") {
-        console.log(chalk.bold.green(version));
+        console.log(chalk.bold.green(version) + "\t" +  chalk.grey(tag.commit.sha));
       } else if (!o.gaOnly) {
-        console.log(version);
+        console.log(version + "\t" +  chalk.grey(tag.commit.sha));
       }
     });
   });
