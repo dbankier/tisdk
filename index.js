@@ -5,12 +5,32 @@ var fs = require("fs");
 var path = require("path");
 var platform = "osx";
 var os =  require('os');
+var tmp = require('tmp');
+var rimraf = require("rimraf");
+var chalk = require("chalk");
+var appc = require("node-appc");
 
+var _spawn = require('child_process').spawn;
+function spawn(cmd,args,props) {
+  if (process.platform === 'win32') {
+    args = ['/c',cmd].concat(args);
+    cmd = process.env.comspec;
+  }
+  return _spawn(cmd,args,props);
+}
+
+var TITANIUM, platform;
 if (os.platform()=="linux"){
+  TITANIUM = path.join(process.env.HOME, '.titanium');
   platform = "linux";
 } else if (os.platform() === "win32") {
+  TITANIUM = path.join(process.cwd().split(path.sep)[0], "ProgramData", "Titanium");
   platform = "win32";
+} else {
+  TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
+  platform = "osx";
 }
+exports.platform = platform;
 
 
 exports.getGATags = function getGATags(callback) {
@@ -21,7 +41,7 @@ exports.getGATags = function getGATags(callback) {
     }
   }, function(err, res) {
     var tags = JSON.parse(res.body).filter(function(a) { return a.name.match(/^\d+_\d+_\d+_.*/); });
-    callback(tags);
+callback(tags);
   });
 };
 
@@ -29,7 +49,7 @@ exports.getNightlies = function getNightlies(branch, callback) {
   request({
     url: "http://builds.appcelerator.com/mobile/" + branch + "/index.json",
     headers: {
-//      'User-Agent': 'Awesome-Octocat-App'
+      //      'User-Agent': 'Awesome-Octocat-App'
     }
   }, function(err, res) {
     callback(JSON.parse(res.body));
@@ -51,7 +71,7 @@ exports.download = function(_version, destination, callback) {
     exports.getNightlies(nightly, function(list) {
       var build = _.find(list, function(t) { return t.git_revision === tag.commit.sha;});
       if (!build) {
-        console.error("Build not available.");
+        console.error("Build not available. Try the `tisdk build` command to build the sdk from source.");
         return;
       }
       var file = fs.createWriteStream(destination);
@@ -82,4 +102,58 @@ exports.download = function(_version, destination, callback) {
     });
   });
 };
+
+exports.manualBuild = function(_version, destination, callback) {
+  var version = _version.replace(/\./g, "_");
+  exports.getGATags(function(tags) {
+    var tag = _.find(tags, function(tag) {
+      return tag.name === version;
+    });
+    if (!tag) {
+      console.error("Invalid GA Version: use the `tisdk list` command");
+      return;
+    }
+    var tmp_dir = tmp.dirSync({prefix:'tisdk_'}).name;
+
+    var args = "clone --depth 1 --branch " + version + " https://github.com/appcelerator/titanium_mobile " + tmp_dir;
+    var git = spawn('git', args.split(" "), {stdio: "inherit"});
+    git.on('error',function(err) { console.log(err); });
+    git.on('exit', function(){
+      var scons = spawn('scons', ['-C', tmp_dir], {stdio: "inherit", env: process.env});
+      scons.on('error',function(err) { console.log(err); });
+      scons.on('exit', function() {
+        fs.renameSync(path.join(tmp_dir, 'dist', "mobilesdk-" + _version.split(".").splice(0,3).join(".") + "-" + platform + ".zip"), destination);
+        callback();
+      });
+    });
+  });
+};
+
+exports.installTarget = function(version) {
+  return path.join(TITANIUM, "mobilesdk", platform, version);
+};
+
+exports.unzip = function(version, src, bundled_version_name, overwrite, callback) {
+  var target = exports.installTarget(version);
+  console.log("Unzipping...");
+  appc.zip.unzip(src, TITANIUM, {
+    visitor: function(entry, i, len) {
+      process.stdout.clearLine();
+      process.stdout.cursorTo(0);
+      process.stdout.write("Unzipping (" + i + "/" + len + ") : " + chalk.grey(entry.entryName) );
+    }
+  }, function() {
+    var source = path.join(TITANIUM, "mobilesdk", platform, bundled_version_name);
+    console.log("");
+    if (overwrite) {
+      console.log("Removing old " + target);
+      rimraf.sync(target);
+    }
+    console.log("Renaming " + source + " to " + target);
+    fs.renameSync(source, target);
+    fs.unlinkSync(src);
+    callback();
+  });
+};
+
 

@@ -1,28 +1,9 @@
 #!/usr/bin/env node
 
-var _ = require("underscore");
 var program = require("commander");
 var tisdk = require("../index");
 var chalk = require("chalk");
 var fs = require("fs");
-var path = require("path");
-var rimraf = require("rimraf");
-var appc = require("node-appc");
-var os =  require('os');
-
-var TITANIUM, platform;
-
-
-if (os.platform()=="linux"){
-  TITANIUM = path.join(process.env.HOME, '.titanium');
-  platform = "linux";
-} else if (os.platform() === "win32") {
-  TITANIUM = path.join(process.cwd().split(path.sep)[0], "ProgramData", "Titanium");
-  platform = "win32";
-} else {
-  TITANIUM = path.join(process.env.HOME, 'Library', 'Application Support', 'Titanium');
-  platform = "osx";
-}
 
 program
 .version(require("../package.json").version);
@@ -50,48 +31,48 @@ program
 .command("install [version]")
 .option("-f, --force", "Overwrite existing install")
 .action(function(version, options) {
-
-  var tmp_file = "mobilesdk-" + version + "-"+platform+".zip";
-  var target = path.join(TITANIUM, "mobilesdk", platform, version);
+  var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
   var overwrite = !!options.force;
-  if (fs.existsSync(target) && !overwrite) {
+  if (fs.existsSync(tisdk.installTarget(version)) && !overwrite) {
     console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
     return;
-  };
+  }
   tisdk.download(version, tmp_file, function(build){
-    console.log("Unzipping...");
-    appc.zip.unzip(tmp_file, TITANIUM, {
-      visitor: function(entry, i, len) {
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
-        process.stdout.write("Unzipping (" + i + "/" + len + ") : " + chalk.grey(entry.entryName) );
-      }
-    }, function() {
-      var source = path.join(TITANIUM, "mobilesdk", platform, build.filename.split("-")[1]);
-      console.log("");
-      if (overwrite) {
-        console.log("Removing old " + target);
-        rimraf.sync(target);
-      }
-      console.log("Renaming " + source + " to " + target);
-      fs.renameSync(source, target);
-      fs.unlinkSync(tmp_file);
+    tisdk.unzip(version, tmp_file, build.filename.split("-")[1], overwrite, function() {
       console.log("Installed Successfully!");
     });
   });
 
 });
 
-
 program
 .description("Download a GA version")
 .command("download [version]")
 .action(function(version) {
-  var tmp_file = "mobilesdk-" + version + "-"+platform+".zip";
-  tisdk.download(version, tmp_file, function(build){
+  var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
+  tisdk.download(version, tmp_file, function(){
     console.log("Done.");
   });
 });
+
+program
+.description("Manual build from the repository")
+.command("build [version]")
+.option("-f, --force", "Overwrite existing install")
+.action(function(version, options) {
+  var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
+  var overwrite = !!options.force;
+  if (fs.existsSync(tisdk.installTarget(version)) && !overwrite) {
+    console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
+    return;
+  }
+  tisdk.manualBuild(version, tmp_file, function(){
+    tisdk.unzip(version, tmp_file, version.split(".").splice(0,3).join("."), overwrite, function() {
+      console.log("Installed Successfully!");
+    });
+  });
+});
+
 
 program.parse(process.argv);
 if (program.args.length === 0 || typeof program.args[program.args.length -1] === 'string'){
