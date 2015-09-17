@@ -24,7 +24,7 @@ $ npm install -g tisdk
 
 When using the `tisdk build` command ensure you have everything installed for the manual build.
 See the [Appcelerator Wiki](http://docs.appcelerator.com/platform/latest/#!/guide/Building_the_Titanium_SDK_From_Source).
-In short you need node, android sdk and ndk, scons, python, git, oracle jdk, ios sdk, etc.
+In short you need node, android sdk API 23 and ndk, scons, python, git, oracle jdk 1.6, ios sdk, etc.
 
 Also make sure your environment variables are set. For example:
 
