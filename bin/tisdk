@@ -6,72 +6,67 @@ var chalk = require("chalk");
 var fs = require("fs");
 
 program
-.version(require("../package.json").version);
+  .version(require("../package.json").version);
 
 program
-.command("list")
-.option("-g, --ga-only", "List GA releases only")
-.description("List available GA releases")
-.action(function(o) {
-  tisdk.getGATags(function(tags) {
-    tags.map(function(tag) {
-      var version = tag.name.replace(/_/g, ".");
-      var type = version.split(".")[3];
-      if (type==="GA") {
-        console.log(chalk.bold.green(version) + "\t" +  chalk.grey(tag.commit.sha));
-      } else if (!o.gaOnly) {
-        console.log(version + "\t" +  chalk.grey(tag.commit.sha));
-      }
+  .command("list")
+  .option("-g, --ga-only", "List GA releases only")
+  .description("List available GA releases")
+  .action(function(o) {
+    tisdk.getGATags(function(tags) {
+      tags.map(function(tag) {
+        var version = tag.name.replace(/_/g, ".");
+        var type = version.split(".")[3];
+        if (type==="GA") {
+          console.log(chalk.bold.green(version) + "\t" +  chalk.grey(tag.commit.sha));
+        } else if (!o.gaOnly) {
+          console.log(version + "\t" +  chalk.grey(tag.commit.sha));
+        }
+      });
     });
   });
-});
 
 program
-.description("Install a GA version")
-.command("install [version]")
-.option("-f, --force", "Overwrite existing install")
-.action(function(version, options) {
-  var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
-  var overwrite = !!options.force;
-  if (fs.existsSync(tisdk.installTarget(version)) && !overwrite) {
-    console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
-    return;
-  }
-  tisdk.download(version, tmp_file, function(build){
-    tisdk.unzip(version, tmp_file, build.filename.split("-")[1], overwrite, function() {
+  .description("Install a GA version")
+  .command("install [version]")
+  .option("-f, --force", "Overwrite existing install")
+  .action(function(version, options) {
+    var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
+    var overwrite = !!options.force;
+    if (fs.existsSync(tisdk.installTarget(version)) && !overwrite) {
+      console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
+      return;
+    }
+    tisdk.install(version, function() {
       console.log("Installed Successfully!");
     });
   });
 
-});
-
 program
-.description("Download a GA version")
-.command("download [version]")
-.action(function(version) {
-  var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
-  tisdk.download(version, tmp_file, function(){
-    console.log("Done.");
+  .description("Download a GA version")
+  .command("download [version]")
+  .action(function(version) {
+    var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
+    tisdk.download(version, tmp_file, function(){
+      console.log("Done.");
+    });
   });
-});
 
 program
-.description("Manual build from the repository")
-.command("build [version]")
-.option("-f, --force", "Overwrite existing install")
-.action(function(version, options) {
-  var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
-  var overwrite = !!options.force;
-  if (fs.existsSync(tisdk.installTarget(version)) && !overwrite) {
-    console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
-    return;
-  }
-  tisdk.manualBuild(version, tmp_file, function(){
-    tisdk.unzip(version, tmp_file, version.split(".").splice(0,3).join("."), overwrite, function() {
+  .description("Manual build from the repository")
+  .command("build [version]")
+  .option("-f, --force", "Overwrite existing install")
+  .action(function(version, options) {
+    var tmp_file = "mobilesdk-" + version + "-"+tisdk.platform+".zip";
+    var overwrite = !!options.force;
+    if (fs.existsSync(tisdk.installTarget(version)) && !overwrite) {
+      console.log(chalk.red("ERROR") + ": SDK already installed. Use the --force flag to overwrite existing install.");
+      return;
+    }
+    tisdk.manualBuild(version, tmp_file, overwrite, function(){
       console.log("Installed Successfully!");
     });
   });
-});
 
 
 program.parse(process.argv);

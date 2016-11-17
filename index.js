@@ -9,6 +9,7 @@ var tmp = require('tmp');
 var rimraf = require("rimraf");
 var chalk = require("chalk");
 var appc = require("node-appc");
+var semver = require("semver");
 
 var _spawn = require('child_process').spawn;
 function spawn(cmd,args,props) {
@@ -17,6 +18,14 @@ function spawn(cmd,args,props) {
     cmd = process.env.comspec;
   }
   return _spawn(cmd,args,props);
+}
+
+function spawnPromise(cmd, args, props) {
+  return new Promise((resolve, reject) => {
+    var s = spawn(cmd, args, props);
+    s.on('error',function(err) { reject(err); });
+    s.on('exit', function(){ resolve(); });
+  })
 }
 
 var TITANIUM, platform;
@@ -41,7 +50,7 @@ exports.getGATags = function getGATags(callback) {
     }
   }, function(err, res) {
     var tags = JSON.parse(res.body).filter(function(a) { return a.name.match(/^\d+_\d+_\d+_.*/); });
-callback(tags);
+    callback(tags);
   });
 };
 
@@ -103,7 +112,13 @@ exports.download = function(_version, destination, callback) {
   });
 };
 
-exports.manualBuild = function(_version, destination, callback) {
+exports.install = function(_version, callback) {
+  var version = _version.replace("_", ".");
+  spawnPromise('ti', ['sdk', 'install', `http://builds.appcelerator.com/mobile-releases/${version.replace(".GA","")}/mobilesdk-${version}-osx.zip`], {stdio: "inherit"})
+  .then(callback);
+}
+
+exports.manualBuild = function(_version, destination, overwrite, callback) {
   var version = _version.replace(/\./g, "_");
   exports.getGATags(function(tags) {
     var tag = _.find(tags, function(tag) {
@@ -119,12 +134,21 @@ exports.manualBuild = function(_version, destination, callback) {
     var git = spawn('git', args.split(" "), {stdio: "inherit"});
     git.on('error',function(err) { console.log(err); });
     git.on('exit', function(){
-      var scons = spawn('scons', ['-C', tmp_dir], {stdio: "inherit", env: process.env});
-      scons.on('error',function(err) { console.log(err); });
-      scons.on('exit', function() {
-        fs.renameSync(path.join(tmp_dir, 'dist', "mobilesdk-" + _version.split(".").splice(0,3).join(".") + "-" + platform + ".zip"), destination);
-        callback();
-      });
+      if (semver.gte(version.split("_").slice(0,3).join("."), "6.0.0")) {
+        spawnPromise('npm', ['install'], {stdio: "inherit", cwd: tmp_dir})
+        .then(() => spawnPromise('npm', ['install', 'fs-extra'], {stdio: "inherit", cwd: tmp_dir}))
+        .then(() => spawnPromise('node', [path.join('build','scons.js'), 'build'], {stdio: "inherit", cwd: tmp_dir}))
+        .then(() => spawnPromise('node', [path.join('build','scons.js'), 'package'], {stdio: "inherit", cwd: tmp_dir}))
+        .then(() => spawnPromise('node', [path.join('build','scons.js'), 'install'], {stdio: "inherit", cwd: tmp_dir}))
+        .then(callback);
+      } else {
+        var scons = spawn('scons', ['-C', tmp_dir], {stdio: "inherit", env: process.env});
+        scons.on('error',function(err) { console.log(err); });
+        scons.on('exit', function() {
+          fs.renameSync(path.join(tmp_dir, 'dist', "mobilesdk-" + _version.split(".").splice(0,3).join(".") + "-" + platform + ".zip"), destination);
+          exports.unzip(version, tmp_file, version.split(".").splice(0,3).join("."), overwrite, callback());
+        });
+      }
     });
   });
 };
