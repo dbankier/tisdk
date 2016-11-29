@@ -114,7 +114,7 @@ exports.download = function(_version, destination, callback) {
 
 exports.install = function(_version, callback) {
   var version = _version.replace("_", ".");
-  spawnPromise('ti', ['sdk', 'install', `http://builds.appcelerator.com/mobile-releases/${version.replace(".GA","")}/mobilesdk-${version}-osx.zip`], {stdio: "inherit"})
+  spawnPromise('ti', ['sdk', 'install', `http://builds.appcelerator.com/mobile-releases/${version.replace(".GA","")}/mobilesdk-${version}-${platform}.zip`], {stdio: "inherit"})
   .then(callback);
 }
 
