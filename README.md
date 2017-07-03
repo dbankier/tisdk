@@ -30,10 +30,10 @@ Also make sure your environment variables are set. For example:
 
 ```
 export ANDROID_SDK="$HOME/Android"
-export ANDROID_NDK="$HOME/android-ndk-r9d"
-export ANDROID_PLATFORM="$ANDROID_SDK/platforms/android-23"
-export GOOGLE_APIS="$ANDROID_SDK/add-ons/addon-google_apis-google-23"
-export JAVA_HOME=$(/usr/libexec/java_home -v $1)
+export ANDROID_NDK="$HOME/android-ndk-r14b"
+export ANDROID_PLATFORM="$ANDROID_SDK/platforms/android-25"
+export GOOGLE_APIS="$ANDROID_SDK/add-ons/addon-google_apis-google-25"
+export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
 export PATH=$ANDROID_SDK/tools:$ANDROID_SDK/platform-tools:$JAVA_HOME/bin:$PATH
 ```
 
